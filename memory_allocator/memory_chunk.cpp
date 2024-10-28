@@ -14,14 +14,15 @@
 // ...
 // so, I probably will copy that logic
 
-void* get_new_memory_chunk(size_t bytes) {
-  void* new_map_address = mmap(nullptr, bytes,
-                               PROT_EXEC | PROT_READ | PROT_WRITE | PROT_NONE,
-                               MAP_PRIVATE | MAP_ANON,
-                               -1, 0);
-  return new_map_address;
+
+void* MemoryChunk::AppendNewMemoryChunk(const size_t bytes) {
+    void* new_map_address = mmap(nullptr, bytes,
+                         PROT_EXEC | PROT_READ | PROT_WRITE | PROT_NONE,
+                         MAP_PRIVATE | MAP_ANON,
+                         -1, 0);
+    return new_map_address;
 }
 
-void remove_arena(void *ptr) {
-
+void MemoryChunk::RemoveMemoryChunk(void* chunk_ptr, const size_t length) {
+    munmap(chunk_ptr, length);
 }

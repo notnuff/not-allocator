@@ -5,16 +5,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.inl
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.inl
 )
 
 # Collect all source files
 file(GLOB_RECURSE COMPILATION_UNITS_TMP CONFIGURE_DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.c++
-        ${CMAKE_CURRENT_SOURCE_DIR}/*.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.c++
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*.cc
 )
 
 # Filter out the test files
@@ -31,8 +31,9 @@ file(GLOB_RECURSE TESTS CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cс
 )
 
+# ${HEADERS}
 
-add_executable(lab1 main.cpp ${COMPILATION_UNITS} ${HEADERS})
+add_executable(lab1 main.cpp ${COMPILATION_UNITS})
 #
 #set(GTESTLIBS GTest::gtest_main GTest::GTest GTest::Main)
 #find_package(GTest REQUIRED)

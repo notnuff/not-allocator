@@ -1,20 +1,37 @@
 #ifndef MEMORY_ARENA_H
 #define MEMORY_ARENA_H
 
+#include <cstddef>
+
 // size of arena measured in pages
 #define DEFAULT_ARENA_SIZE 15
-
-// default size of one page - 4kb
-#define DEFAULT_PAGE_SIZE 4096
 
 
 // so, the main idea - this struct will be saved in the header of some memory chunk,
 // and that`s how memory arena will be defined
-struct memory_arena_t {
-    size_t size;
-    struct memory_arena* next;
-} typedef memory_arena_t;
 
-constexpr auto MEMORY_ARENA_HEADER_SIZE = sizeof(memory_arena_t);
+class MemoryArena {
+public:
+    // we shouldn`t be able to simply create memory arenas
+    MemoryArena()=delete;
+
+    // instead, we need to create arenas from raw pointers and size
+    static MemoryArena* ConvertToMemoryArena(void* start, size_t size);
+
+    size_t Size();
+    void Size(size_t size);
+
+    MemoryArena* Next();
+    void Next(MemoryArena* next);
+
+    void* UserSpace();
+    size_t UserSpaceSize();
+
+protected:
+    size_t size_ = 0;
+    MemoryArena* next_ = nullptr;
+};
+
+constexpr auto MEMORY_ARENA_HEADER_SIZE = sizeof(MemoryArena);
 
 #endif //MEMORY_ARENA_H
