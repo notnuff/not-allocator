@@ -10,7 +10,7 @@ public:
     AllocatorManager()=delete;
 
     static void DefaultInitiateManager();
-    static void InitiateManager(void* memory_chunk, size_t memory_chunk_size);
+    static void DefaultAddArena(size_t size);
 
     static MemoryArena* CreateArena(size_t size);
     static void AppendArena(MemoryArena* arena);
@@ -21,8 +21,15 @@ public:
     static MemoryBlock* BlockEntry();
 
     static MemoryBlock* FindFreeBlock(size_t size, MemoryBlock* starting_block = nullptr);
+    static MemoryBlock* FindFreeBlockAnyArena(size_t size);
+    static MemoryBlock* FindFreeBlockOrAppendArena(size_t size);
+
     static void OccupyBlock(MemoryBlock* block, size_t size);
     static void FreeBlock(MemoryBlock* block);
+
+    static inline void TryMergeAdjacent(MemoryBlock* block);
+    static inline bool TryMergeNext(MemoryBlock* block);
+    static inline bool TryMergePrev(MemoryBlock* block);
 
 protected:
     static inline bool IsBlockSuitable(MemoryBlock* block, size_t size, BLOCK_STATUS desired_status = BLOCK_STATUS::FREE);

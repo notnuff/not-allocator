@@ -1,6 +1,8 @@
 #include "allocator.h"
 
 #include <cstdio>
+#include <cstring>
+#include <new>
 
 #include "memory_arena.h"
 #include "memory_block.h"
@@ -18,10 +20,7 @@ void *mem_alloc(size_t size) {
     AllocatorManager::DefaultInitiateManager();
   }
 
-
-  auto* found_block = AllocatorManager::FindFreeBlock(size);
-  // if(!found_block) found_block = find_free_memory_block(memory_arena_entry, size);
-  // if(!found_block) ;// add new memory block
+  auto* found_block = AllocatorManager::FindFreeBlockOrAppendArena(size);
 
   AllocatorManager::OccupyBlock(found_block, size);
 
@@ -38,6 +37,15 @@ void mem_free(void *ptr) {
 }
 
 void *mem_realloc(void *ptr, size_t new_size) {
+  auto* current_block = (MemoryBlock*) ( ptr - MemoryBlock::HeaderSize() );
+
+  if( current_block->UserSpaceSize() < new_size ) AllocatorManager::TryMergeNext(current_block);
+  if( current_block->UserSpaceSize() >= new_size ) return current_block;
+
+  auto* found_block = AllocatorManager::FindFreeBlockOrAppendArena(new_size);
+  memcpy( found_block->UserSpace(), current_block->UserSpace(), current_block->UserSpaceSize() );
+  AllocatorManager::FreeBlock(current_block);
+
   return nullptr;
 }
 

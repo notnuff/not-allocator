@@ -19,6 +19,15 @@ void AllocatorManager::DefaultInitiateManager() {
     if(!memory_block_entry_) throw std::bad_alloc();
 }
 
+void AllocatorManager::DefaultAddArena(size_t size) {
+    auto new_arena_size = (size / DEFAULT_PAGE_SIZE + 1) * DEFAULT_PAGE_SIZE;
+
+    auto* new_arena = CreateArena(new_arena_size);
+    AppendArena(new_arena);
+
+    MemoryBlock::ConvertToMemoryBlock( new_arena->UserSpace(), new_arena->UserSpaceSize() );
+}
+
 MemoryArena* AllocatorManager::CreateArena(size_t size) {
     MemoryArena* ptr_to_arena = nullptr;
 
@@ -73,6 +82,34 @@ MemoryBlock* AllocatorManager::FindFreeBlock(size_t size, MemoryBlock* starting_
     return nullptr;
 }
 
+MemoryBlock* AllocatorManager::FindFreeBlockAnyArena(size_t size) {
+    auto* current_arena = ArenaEntry();
+
+    while (current_arena) {
+        auto* current_lookup_block = (MemoryBlock*) ArenaEntry()->UserSpace();
+
+        auto* block = FindFreeBlock(size, current_lookup_block);
+        if (block) return block;
+
+        current_arena = current_arena->Next();
+    }
+
+    return nullptr;
+}
+
+MemoryBlock* AllocatorManager::FindFreeBlockOrAppendArena(size_t size) {
+    auto* found_block = FindFreeBlockAnyArena(size);
+
+    if( !found_block ) {
+        DefaultAddArena(size);
+        found_block = FindFreeBlockAnyArena(size);
+    }
+
+    if(!found_block) throw std::bad_alloc();
+
+    return found_block;
+}
+
 void AllocatorManager::OccupyBlock(MemoryBlock* block, size_t size) {
     if(block == nullptr) throw std::bad_alloc();
 
@@ -94,23 +131,7 @@ void AllocatorManager::OccupyBlock(MemoryBlock* block, size_t size) {
 
 void AllocatorManager::FreeBlock(MemoryBlock* block) {
     block->Tag(BLOCK_STATUS::FREE);
-    // try merge blocks
-
-    if( auto next = block->Next() ) {
-        if(next->Tag() == BLOCK_STATUS::FREE) {
-            block->Size( block->Size() + next->Size() );
-            block->Next( next->Next() );
-
-            memset( next, 0, MemoryBlock::HeaderSize() );
-        }
-    }
-
-    if( auto prev = block->Prev() ) {
-        if(prev->Tag() == BLOCK_STATUS::FREE) {
-            prev->Size( prev->Size() + block->Size() );
-            prev->Next( block->Next() );
-        }
-    }
+    TryMergeAdjacent(block);
 }
 
 bool AllocatorManager::IsBlockSuitable(MemoryBlock *block, size_t size, BLOCK_STATUS desired_status) {
@@ -118,4 +139,36 @@ bool AllocatorManager::IsBlockSuitable(MemoryBlock *block, size_t size, BLOCK_ST
       block->Tag() == BLOCK_STATUS::FREE &&
       block->UserSpaceSize()>= size;
     return result;
+}
+
+void AllocatorManager::TryMergeAdjacent(MemoryBlock *block) {
+    TryMergeNext(block);
+    TryMergePrev(block);
+}
+
+bool AllocatorManager::TryMergeNext(MemoryBlock *block) {
+    if( auto next = block->Next() ) {
+        if(next->Tag() == BLOCK_STATUS::FREE) {
+            block->Size( block->Size() + next->Size() );
+            block->Next( next->Next() );
+
+            memset( next, 0, MemoryBlock::HeaderSize() );
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool AllocatorManager::TryMergePrev(MemoryBlock *block) {
+    if( auto prev = block->Prev() ) {
+        if(prev->Tag() == BLOCK_STATUS::FREE) {
+            prev->Size( prev->Size() + block->Size() );
+            prev->Next( block->Next() );
+
+            return true;
+        }
+    }
+
+    return false;
 }
