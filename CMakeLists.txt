@@ -26,22 +26,23 @@ foreach(file ${COMPILATION_UNITS_TMP})
 endforeach()
 
 file(GLOB_RECURSE TESTS CONFIGURE_DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.c++
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cс
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*_test.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*_test.c++
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_allocator/*_test.cс
 )
 
 # ${HEADERS}
 
-add_executable(lab1 main.cpp ${COMPILATION_UNITS})
-#
-#set(GTESTLIBS GTest::gtest_main GTest::GTest GTest::Main)
-#find_package(GTest REQUIRED)
-#
-#enable_testing()
-#add_executable(tests-all ${TESTS} ${HEADERS} ${COMPILATION_UNITS} )
-#
-#target_link_libraries(tests-all ${GTESTLIBS})
-#
-#include(GoogleTest)
-#gtest_discover_tests(tests-all)
+add_executable(lab1 main.cpp ${TESTS} ${COMPILATION_UNITS})
+
+set(GTESTLIBS GTest::gtest_main GTest::GTest GTest::Main)
+find_package(GTest REQUIRED)
+
+enable_testing()
+add_executable(tests-all ${TESTS} ${COMPILATION_UNITS} )
+
+target_link_libraries(tests-all ${GTESTLIBS})
+target_link_libraries(lab1 ${GTESTLIBS})
+
+include(GoogleTest)
+gtest_discover_tests(tests-all)

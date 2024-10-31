@@ -27,11 +27,11 @@ public:
     void* UserSpace();
     size_t UserSpaceSize();
 
+    static size_t HeaderSize();
+
 protected:
     size_t size_ = 0;
     MemoryArena* next_ = nullptr;
 };
-
-constexpr auto MEMORY_ARENA_HEADER_SIZE = sizeof(MemoryArena);
 
 #endif //MEMORY_ARENA_H

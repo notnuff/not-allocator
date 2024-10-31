@@ -1,7 +1,9 @@
 #include <iostream>
+#include <gtest/gtest.h>
 #include "memory_allocator/allocator.h"
 
-int main() {
+int main(int argc, char **argv) {
+  testing::InitGoogleTest(&argc, argv);
 
-  return 0;
+  return RUN_ALL_TESTS();
 }

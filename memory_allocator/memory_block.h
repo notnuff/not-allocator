@@ -28,7 +28,7 @@ public:
     void* UserSpace();
     size_t UserSpaceSize();
 
-    static inline size_t HeaderSize();
+    static size_t HeaderSize();
 
 protected:
     size_t size_ = 0;

@@ -1,7 +1,3 @@
-//
-// Created by notnuff on 23.10.24.
-//
-
 #include "memory_arena.h"
 
 
@@ -30,9 +26,13 @@ void MemoryArena::Next(MemoryArena *next) {
 }
 
 void* MemoryArena::UserSpace() {
-    return (char*) this + sizeof(MemoryArena);
+    return (void*) ((char*) this + HeaderSize());
 }
 
 size_t MemoryArena::UserSpaceSize() {
-    return size_ - sizeof(MemoryArena);
+    return size_ - HeaderSize();
+}
+
+size_t MemoryArena::HeaderSize() {
+    return sizeof(MemoryArena);
 }
