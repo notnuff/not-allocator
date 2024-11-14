@@ -44,13 +44,13 @@ void mem_free(void *ptr) {
   // TODO: non-continuous memory blocks?
   // Possible solution - just check whether we can merge blocks by memory pointers
 
-  auto* current_block = (MemoryBlock*) ( ptr - MemoryBlock::HeaderSize() );
+  auto* current_block = (MemoryBlock*) ( (char*) ptr - MemoryBlock::HeaderSize() );
   AllocatorManager::FreeBlock(current_block);
 
 }
 
 void *mem_realloc(void *ptr, size_t new_size) {
-  auto* current_block = (MemoryBlock*) ( ptr - MemoryBlock::HeaderSize() );
+  auto* current_block = (MemoryBlock*) ( (char*) ptr - MemoryBlock::HeaderSize() );
 
   if( current_block->UserSpaceSize() < new_size ) AllocatorManager::TryMergeNext(current_block);
   if( current_block->UserSpaceSize() >= new_size ) return current_block->UserSpace();
