@@ -4,6 +4,8 @@
 
 #include "allocator.h"
 
+#include <format>
+
 
 #include "memory_allocator_manager.h"
 

@@ -9,6 +9,7 @@ MemoryBlock* MemoryBlock::ConvertToMemoryBlock(void *start, size_t size) {
     block->prev_block_begin = nullptr;
     block->tag = BLOCK_STATUS::FREE;
 
+    return block;
 }
 
 size_t MemoryBlock::Size() {
