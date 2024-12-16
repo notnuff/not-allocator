@@ -4,6 +4,7 @@
 #include <common/list.h>
 
 class MemoryCache;
+
 class MemorySlab {
 public:
   // obj_full_size should be ALIGNED already
@@ -36,6 +37,8 @@ protected:
   MemorySlab* next_linked_slab_;
 
   MemoryCache* cache_;
+
+  DoubleLinkedListNode<MemorySlab> list_head_;
 };
 
 #endif //MEMORY_SLAB_H

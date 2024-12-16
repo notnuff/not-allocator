@@ -11,6 +11,7 @@
 
 static MemoryCache cache_for_caches( sizeof(MemoryCache) );
 
+
 SlubMemoryManager::SlubMemoryManager(size_t num_of_small, size_t num_per_group,
                                      size_t num_of_exponential_groups) {
   auto num_of_caches = num_of_small + num_of_exponential_groups * num_per_group;

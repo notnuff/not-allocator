@@ -15,6 +15,11 @@ struct ListNodeT {
 template<class T>
 class DoubleLinkedListNode {
 public:
+  static void AppendBeforeNode(DoubleLinkedListNode<T> node, T* obj);
+  static void AppendAfterNode(DoubleLinkedListNode<T> node, T* obj);
+  static void RemoveFromListToList(T* head);
+
+public:
   T* prev_node_ = nullptr;
   T* next_node_ = nullptr;
 };
