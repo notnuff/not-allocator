@@ -1,4 +1,4 @@
-#include "memory_block.h"
+#include <slob_allocator/memory_block.h>
 
 MemoryBlock* MemoryBlock::ConvertToMemoryBlock(void *start, size_t size) {
     if(sizeof(MemoryBlock) > size) return nullptr;

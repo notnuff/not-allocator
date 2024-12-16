@@ -1,13 +1,11 @@
+#include <memory_allocators_apis/mem_allocator.h>
+
 #include <gtest/gtest.h>
 #include <random>
 #include <ranges>
 
-#include "allocator.h"
-
 #include <format>
-
-
-#include "memory_allocator_manager.h"
+#include <slob_allocator/memory_allocator_manager.h>
 
 int rand_num(int lower, int upper) {
   std::random_device rd;

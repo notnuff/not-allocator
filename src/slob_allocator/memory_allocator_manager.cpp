@@ -1,11 +1,11 @@
-#include "memory_allocator_manager.h"
+#include <slob_allocator/memory_allocator_manager.h>
+#include <general_memory_abstractions/memory_chunk.h>
 
 #include <cstring>
 #include <iostream>
 #include <new>
 #include <vector>
 
-#include "memory_chunk.h"
 
 constexpr auto DEFAULT_MEMORY_CHUNK_SIZE = DEFAULT_ARENA_SIZE * DEFAULT_PAGE_SIZE;
 
