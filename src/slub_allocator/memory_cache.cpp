@@ -7,38 +7,27 @@
 
 #include "common/custom_math.h"
 
-MemoryCache* MemoryCache::CreateCache(size_t size, size_t alignment){
-  auto* mem = mem_alloc( sizeof(MemoryCache) );
-
-  auto* cache = new(mem) MemoryCache(size, alignment);
-
-  return cache;
+MemoryCache::MemoryCache(const MemoryCacheInitParams& init_params) {
+  object_size_ = round_up(init_params.object_size, init_params.alignment);
+  force_inline_header_ = init_params.force_inline_header;
 }
-
-MemoryCache::MemoryCache(size_t size, size_t alignment) {
-  object_size_ = round_up(size, alignment);
-
-  auto* mem = mem_alloc(sizeof(MemoryCacheNode));
-  cache_node_ = new (mem) MemoryCacheNode();
-
-  cache_node_->slab_list_full_ = nullptr;
-  cache_node_->slab_list_partial_ = nullptr;
-
-  current_slab_ = nullptr;
-}
-
 
 MemorySlab* MemoryCache::CreateNewSlab() {
-  auto* slab = MemorySlab::CreateSlab(object_size_, this);
+  auto* slab = MemorySlab::CreateSlab({
+    object_size_,
+    force_inline_header_,
+    this
+  });
+
   if (!slab) throw std::runtime_error("No slab created");
 
   return slab;
 }
 
 void MemoryCache::SwapCurrentSlabToFull() {
-  current_slab_->NextSlab(cache_node_->slab_list_full_);
+  current_slab_->NextSlab(slab_list_full_);
 
-  cache_node_->slab_list_full_ = current_slab_;
+  slab_list_full_ = current_slab_;
 
   current_slab_ = nullptr;
 }
@@ -46,25 +35,25 @@ void MemoryCache::SwapCurrentSlabToFull() {
 void MemoryCache::SwapPartialSlabToCurrent() {
   if (current_slab_) throw std::runtime_error("Current slab is not empty");
 
-  auto* partial = cache_node_->slab_list_partial_;
+  auto* partial = slab_list_partial_;
 
   if (!partial) throw std::runtime_error("No partial slab available");
 
-  cache_node_->slab_list_partial_ = partial->NextSlab();
+  slab_list_partial_ = partial->NextSlab();
   current_slab_ = partial;
 }
 
 void MemoryCache::SwapSlabToPartial(MemorySlab* slab) {
-  auto* curr_slab = cache_node_->slab_list_full_;
+  auto* curr_slab = slab_list_full_;
   MemorySlab* prev_slab = nullptr;
 
   while (curr_slab) {
     if (slab == curr_slab) {
       if (prev_slab) prev_slab->NextSlab( current_slab_->NextSlab() );
-      else cache_node_->slab_list_full_ = curr_slab->NextSlab();
+      else slab_list_full_ = curr_slab->NextSlab();
 
-      curr_slab->NextSlab(cache_node_->slab_list_partial_);
-      cache_node_->slab_list_partial_ = curr_slab;
+      curr_slab->NextSlab(slab_list_partial_);
+      slab_list_partial_ = curr_slab;
     }
     prev_slab = curr_slab;
     curr_slab = curr_slab->NextSlab();
@@ -81,7 +70,7 @@ void* MemoryCache::AllocateObject() {
   if (!obj) {
     SwapCurrentSlabToFull();
 
-    if (cache_node_->slab_list_partial_)
+    if (slab_list_partial_)
       SwapPartialSlabToCurrent();
     else
       current_slab_ = CreateNewSlab();
@@ -99,6 +88,7 @@ bool MemoryCache::TryReturnObject(void* object_ptr) {
   slab->ReturnObject(object_ptr);
 
   SwapSlabToPartial(slab);
+  return true;
 }
 
 
@@ -114,12 +104,12 @@ MemorySlab* MemoryCache::SlabOfMemory(void* ptr) {
     if ( curr_slap->IsPtrBelongsToSlab(ptr) ) return curr_slap;
   }
 
-  curr_slap = cache_node_->slab_list_partial_;
+  curr_slap = slab_list_partial_;
   while (curr_slap) {
     if ( curr_slap->IsPtrBelongsToSlab(ptr) ) return curr_slap;
   }
 
-  curr_slap = cache_node_->slab_list_full_;
+  curr_slap = slab_list_full_;
   while (curr_slap) {
     if ( curr_slap->IsPtrBelongsToSlab(ptr) ) return curr_slap;
   }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(lab1)
+project(not-allocator)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

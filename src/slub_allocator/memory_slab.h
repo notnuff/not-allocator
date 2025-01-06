@@ -2,33 +2,47 @@
 #define MEMORY_SLAB_H
 
 #include <common/list.h>
+#include <cstddef>
 
 class MemoryCache;
 
+struct MemorySlabInitParams {
+  size_t object_size = 0;
+  bool inline_header = true;
+  MemoryCache* cache = nullptr;
+};
+
 class MemorySlab {
-public:
+ public:
   // obj_full_size should be ALIGNED already
   // minimal obj_full_size
-  static MemorySlab* CreateSlab(size_t obj_full_size, MemoryCache* cache = nullptr);
+  static MemorySlab* CreateSlab(const MemorySlabInitParams& init_params);
 
   void* GetFreeObject();
   void ReturnObject(void* ptr);
 
   bool IsPtrBelongsToSlab(void* ptr);
 
-public:
+ public:
   MemorySlab* NextSlab();
   void NextSlab(MemorySlab* ptr);
 
   MemoryCache* MemCache();
   void MemCache(MemoryCache* ptr);
 
-protected:
+ protected:
   explicit MemorySlab(size_t obj_full_size);
+
+  static MemorySlab* CreateSlabInlined(size_t obj_full_size);
+  static MemorySlab* CreateSlabExternal(size_t obj_full_size,
+                                        void* mem_for_slab);
 
   void AppendExtend(size_t extend_size);
   void PopulateExtend(size_t step_size);
 
+  static size_t CalculateExtendSize(size_t obj_size);
+
+ protected:
   void* extend_begin_;
   size_t extend_size_;
 

@@ -4,6 +4,7 @@
 #include "memory_cache.h"
 
 
+
 class SlubMemoryManager {
 public:
 
@@ -29,11 +30,19 @@ public:
   void Free(void* ptr);
 
 protected:
+  MemoryCache* AllocateCache(const MemoryCacheInitParams& init_params);
+
+protected:
   MemorySlab* GetSlabOfPtr(void* ptr);
   MemoryCache* CalculateCacheForSize(size_t size);
 
-  MemoryCache* caches_;
-  size_t num_of_caches_;
+protected:
+  MemoryCache* cache_for_array_ = nullptr;
+
+protected:
+  // that are our caches we will iterate through
+  MemoryCache* allocated_caches_ = nullptr;
+  size_t num_of_caches_ = 0;
 };
 
 

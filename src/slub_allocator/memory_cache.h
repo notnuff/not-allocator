@@ -3,9 +3,15 @@
 
 #include <slub_allocator/memory_slab.h>
 
+struct MemoryCacheInitParams {
+  size_t object_size = 0;
+  size_t alignment = 0;
+  bool force_inline_header = true;
+};
+
 class MemoryCache {
 public:
-  static MemoryCache* CreateCache(size_t size, size_t alignment = 0);
+  explicit MemoryCache(const MemoryCacheInitParams& init_params);
 
   void* AllocateObject();
   bool TryReturnObject(void* object_ptr);
@@ -13,11 +19,6 @@ public:
   size_t MaxObjSize() const;
   MemorySlab* SlabOfMemory(void* ptr);
 
-public:
-
-
-public:
-  explicit MemoryCache(size_t size, size_t alignment = 0);
 
 protected:
   MemorySlab* CreateNewSlab();
@@ -26,21 +27,17 @@ protected:
   void SwapSlabToPartial(MemorySlab* slab);
 
 protected:
-  size_t object_size_;
+  size_t object_size_ = 0;
 
 protected:
-  MemorySlab* current_slab_;
+  MemorySlab* current_slab_ = nullptr;
+  MemorySlab* slab_list_partial_ = nullptr;
+  MemorySlab* slab_list_full_ = nullptr;
 
 protected:
-
-  // do I really need this? probably not
-  class MemoryCacheNode {
-  public:
-    MemorySlab* slab_list_partial_;
-    MemorySlab* slab_list_full_;
-  };
-
-  MemoryCacheNode* cache_node_;
+  // the flag which defines if the header of slab should
+  // be located directly on beginning of slab
+  bool force_inline_header_ = false;
 };
 
 

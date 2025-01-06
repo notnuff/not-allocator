@@ -1,23 +1,55 @@
 #include "memory_slab.h"
 
+#include <common/list.h>
 #include <general_memory_abstractions/memory_chunk.h>
 #include <memory_allocators_apis/mem_allocator.h>
 #include <slub_allocator/memory_cache.h>
-#include <common/list.h>
 
 #include <algorithm>
 #include <cstdlib>
 #include <new>
 #include <stdexcept>
 
+#include "cache_for_caches.h"
+#include "common/custom_math.h"
 
 MemorySlab::MemorySlab(size_t obj_full_size) {
-  auto calculated_slab_size = DEFAULT_PAGE_SIZE;
+  auto calculated_slab_size = CalculateExtendSize(obj_full_size);
   AppendExtend(calculated_slab_size);
   PopulateExtend(obj_full_size);
 
   next_linked_slab_ = nullptr;
 }
+
+size_t MemorySlab::CalculateExtendSize(size_t obj_size){
+  return round_up(obj_size, DEFAULT_PAGE_SIZE);
+}
+
+MemorySlab* MemorySlab::CreateSlabInlined(size_t obj_full_size) {
+  constexpr auto slab_aligned_size =
+    sizeof(MemorySlab) + alignof(MemorySlab);
+
+  auto extend_required_space =
+    CalculateExtendSize( obj_full_size + slab_aligned_size);
+
+  auto* extend_header_begin = MemoryChunk::AppendNewMemoryChunk(extend_required_space);
+  auto* extend_slab_begin = (char*) extend_header_begin + slab_aligned_size;
+  auto extend_size = extend_required_space - slab_aligned_size;
+
+  auto* slab = (MemorySlab*) extend_header_begin;
+  slab->extend_begin_ = extend_slab_begin;
+  slab->extend_size_ = extend_size;
+
+  slab->PopulateExtend(obj_full_size);
+  return slab;
+}
+
+
+MemorySlab* MemorySlab::CreateSlabExternal(size_t obj_full_size,
+                                           void* mem_for_slab) {
+  return new (mem_for_slab) MemorySlab(obj_full_size);
+}
+
 
 void MemorySlab::AppendExtend(size_t extend_size) {
   // by default, memory chunk is aligned for ANY data type,
@@ -30,8 +62,11 @@ void MemorySlab::PopulateExtend(size_t step_size) {
   free_objects_list_entry_ = new (extend_begin_) ListNodeT();
 
   auto min_obj_size = std::max(step_size, sizeof(ListNode<void>));
-  if ( extend_size_ % min_obj_size != 0)
-    throw std::runtime_error("Slab size must be a multiple of min_obj_size");
+  // if ( extend_size_ % min_obj_size != 0)
+  //   throw std::runtime_error("Slab size must be a multiple of min_obj_size");
+
+  if ( extend_size_ < min_obj_size )
+    throw std::runtime_error("Slab size must be bigger than min_obj_size");
 
   auto* current_node = free_objects_list_entry_;
 
@@ -42,10 +77,17 @@ void MemorySlab::PopulateExtend(size_t step_size) {
   }
 }
 
-MemorySlab* MemorySlab::CreateSlab(size_t obj_full_size, MemoryCache* cache) {
-  auto* mem = mem_alloc(sizeof(MemorySlab));
-  auto* slab = new (mem) MemorySlab(obj_full_size);
-  slab->MemCache(cache);
+MemorySlab* MemorySlab::CreateSlab(const MemorySlabInitParams& init_params) {
+  MemorySlab* slab = nullptr;
+
+  if (init_params.inline_header) {
+    slab = CreateSlabInlined(init_params.object_size);
+  } else {
+    auto* slab_mem = getCacheForSlabHeaders().AllocateObject();
+    slab = CreateSlabExternal(init_params.object_size, slab_mem);
+  }
+
+  if (!slab) throw std::bad_alloc();
 
   return slab;
 }

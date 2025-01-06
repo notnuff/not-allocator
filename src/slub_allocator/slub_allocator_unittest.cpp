@@ -5,10 +5,11 @@
 #include <ranges>
 
 #include <format>
-#include <slob_allocator/memory_allocator_manager.h>
 
 
 TEST(SlubAllocator, TestAllocate) {
+
+  auto meme = kmalloc(10);
 
 }
 
